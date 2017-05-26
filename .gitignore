@@ -1,3 +1,5 @@
 *.py
 cocos2d/build/cocos2d-win10.sln
 *.sln
+cocos2d/
+proj.win32/
