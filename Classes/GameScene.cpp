@@ -30,50 +30,173 @@ bool GameScene::init()
 		return false;
 	}
 
-	Size visibleSize = Director::getInstance()->getVisibleSize();
-	Vec2 origin = Director::getInstance()->getVisibleOrigin();
+	visibleSize = Director::getInstance()->getVisibleSize();
+	origin = Director::getInstance()->getVisibleOrigin();
 
 	auto backgroundSprite = Sprite::create("Background.png");
 	backgroundSprite->setPosition(Point(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
 
 	this->addChild(backgroundSprite);
 
-	//auto edgeBody = PhysicsBody::createEdgeBox(visibleSize, PHYSICSBODY_MATERIAL_DEFAULT, 3);
+	auto edgeBody = PhysicsBody::createEdgeBox(visibleSize, PHYSICSBODY_MATERIAL_DEFAULT, 3);
 
-	//auto edgeNode = Node::create();
-	//edgeNode->setPosition(Point(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
+	auto edgeNode = Node::create();
+	edgeNode->setPosition(Point(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
 
-	//edgeNode->setPhysicsBody(edgeBody);
+	edgeNode->setPhysicsBody(edgeBody);
 
-	//this->addChild(edgeNode);
-
-	this->schedule(schedule_selector(GameScene::SpawnEnemy), 0.005 * visibleSize.width);
-	
-	player.SpawnPlayer(this);
+	player = new Player();
+	player->SpawnPlayer(this);
 
 	auto touchListener = EventListenerTouchOneByOne::create();
 	touchListener->setSwallowTouches(true);
 	touchListener->onTouchBegan = CC_CALLBACK_2(GameScene::onTouchBegan, this);
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(touchListener, this);
 
+	score = 0;
+
+	__String *tempScore = __String::createWithFormat("%i", score);
+
+	scoreLabel = Label::createWithTTF(tempScore->getCString(), "fonts/Marker Felt.ttf", visibleSize.height * 0.2);
+	scoreLabel->setColor(Color3B::WHITE);
+	scoreLabel->setPosition(Point(visibleSize.width / 2 + origin.x, visibleSize.height * 0.75 + origin.y));
+	
+	this->addChild(edgeNode);
+
+	this->schedule(schedule_selector(GameScene::SpawnEnemy), 1.5);
+
+	this->addChild(scoreLabel, 10000);
+
+	this->scheduleUpdate();
+
 	return true;
 }
 
 void GameScene::SpawnEnemy(float dt)
 {
-	enemy.SpawnEnemy(this);
+	if (isInReset <= 0)
+	{
+		Enemy *e = new Enemy();
+		e->SpawnEnemy(this);
+		enemy.push_back(e);
+	}
+	isInReset = isInReset - dt;
 }
 
 bool GameScene::onTouchBegan(cocos2d::Touch *touch, cocos2d::Event *event)
 {
-	bullet.SpawnBullet(this, touch->getLocationInView());
+	Bullet *b = new Bullet();
+	b->SpawnBullet(this, touch->getLocationInView());
 
-	this->scheduleOnce(schedule_selector(GameScene::Shoot), 0.005);
+	b->setIsShooting();
+	bullet.push_back(b);
 
 	return true;
 }
 
-void GameScene::Shoot(float dt)
+void GameScene::update(float dt)
 {
-	bullet.update();
+	// move objects
+	for (auto b : bullet)
+		b->update();
+
+	for(auto e : enemy)
+	 e->update();
+
+	// Collision Checks after moving;
+
+	std::vector<Enemy*> remove_enemy;
+	std::vector<Bullet*> remove_bullet;
+
+	for (auto e : enemy)
+	{
+		if (e->getBoundingBox().intersectsRect(player->getBoundingBox()))
+		{
+			resetGame();
+			return;
+		}
+		for (auto b : bullet)
+			if (e->getBoundingBox().intersectsRect(b->getBoundingBox()))
+			{
+				remove_enemy.push_back(e);
+				remove_bullet.push_back(b);
+			}
+	}
+	for (int i = 0; i < remove_bullet.size(); i++)
+	{
+		auto iter = std::find(bullet.begin(), bullet.end(), remove_bullet[i]);
+
+		if (iter != bullet.end())
+		{
+			bullet.erase(iter);
+		}
+	}
+
+	for (int j = 0; j < remove_enemy.size(); j++)
+	{
+		auto iter = std::find(enemy.begin(), enemy.end(), remove_enemy[j]);
+
+		if (iter != enemy.end())
+		{
+			score++;
+			enemy.erase(iter);
+		}
+	}
+
+	//UpdateScore
+
+	__String *tempScore = __String::createWithFormat("%i", score);
+
+	scoreLabel->setString(tempScore->getCString());
+
+	for (auto b : remove_bullet)
+	{
+		b->removeSpriteFromScene();
+		delete b;
+	}
+	for (auto e : remove_enemy)
+	{
+		e->removeSpriteFromScene();
+		delete e;
+	}
+
+	remove_bullet.clear();
+	remove_enemy.clear();
+
+}
+
+void GameScene::resetGame()
+{
+	for (auto b : bullet)                                                                                              
+	{
+		b->removeSpriteFromScene();
+		delete b;
+	}
+
+	for (auto e : enemy)
+	{
+		e->removeSpriteFromScene();
+		delete e;
+	}
+
+	bullet.clear();
+	enemy.clear();
+
+	scoreLabel->setPosition(Point(visibleSize.width *0.25 + origin.x, visibleSize.height * 0.5 + origin.y));
+	
+	isInReset = 1.0;
+
+	this->scheduleOnce(schedule_selector(GameScene::reset), 1.0);
+}
+
+void GameScene::reset(float dt)
+{
+	score = 0;
+
+	__String *tempScore = __String::createWithFormat("%i", score);
+
+	scoreLabel->setString(tempScore->getCString());
+
+	scoreLabel->setPosition(Point(visibleSize.width / 2 + origin.x, visibleSize.height * 0.75 + origin.y));
+
 }

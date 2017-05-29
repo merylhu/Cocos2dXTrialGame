@@ -13,9 +13,9 @@ void Player::SpawnPlayer(cocos2d::Layer *layer)
 {
 	CCLOG("SPAWN Player");
 
-	auto PlayerSprite = Sprite::create("home.png");
+	PlayerSprite = Sprite::create("home.png");
 
-	auto PlayerBody = PhysicsBody::createBox(PlayerSprite->getContentSize());
+	PlayerBody = PhysicsBody::createBox(PlayerSprite->getContentSize());
 	
 	PlayerBody->setDynamic(false);
 	PlayerSprite->setPhysicsBody(PlayerBody);
@@ -24,4 +24,20 @@ void Player::SpawnPlayer(cocos2d::Layer *layer)
 
 	layer->addChild(PlayerSprite);
 
+}
+
+CCRect Player::getBoundingBox()
+{
+	CCRect PlayerRect = CCRectMake(
+		PlayerSprite->getPosition().x - (PlayerSprite->getContentSize().width / 2),
+		PlayerSprite->getPosition().y - (PlayerSprite->getContentSize().height / 2),
+		PlayerSprite->getContentSize().width,
+		PlayerSprite->getContentSize().height);
+
+	return PlayerRect;
+}
+
+void Player::removeSpriteFromScene()
+{
+	PlayerBody->getNode()->removeFromParent();
 }

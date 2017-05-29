@@ -25,16 +25,29 @@ private:
 
 	bool onTouchBegan(cocos2d::Touch *touch, cocos2d::Event *event);
 
-	void Shoot(float dt);
+	void update(float dt);
+
+	void resetGame();
+
+	void reset(float dt);
 
 	cocos2d::PhysicsWorld *sceneWorld;
 
-	Enemy enemy;
+	std::vector<Enemy*> enemy;
 
-	Player player;
+	Player *player;
 
-	Bullet bullet;
+	std::vector<Bullet*> bullet;
+	
+	unsigned int score;
 
+	cocos2d::Label *scoreLabel;
+
+	cocos2d::Size visibleSize;
+
+	cocos2d::Vec2 origin;
+
+	float isInReset;
 };
 
 #endif // __Game_SCENE_H__
