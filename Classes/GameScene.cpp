@@ -120,6 +120,7 @@ void GameScene::update(float dt)
 			{
 				remove_enemy.push_back(e);
 				remove_bullet.push_back(b);
+				break;
 			}
 	}
 	for (int i = 0; i < remove_bullet.size(); i++)
@@ -160,8 +161,8 @@ void GameScene::update(float dt)
 		delete e;
 	}
 
-	remove_bullet.clear();
-	remove_enemy.clear();
+	remove_bullet = std::vector<Bullet*>();
+	remove_enemy = std::vector<Enemy*>();
 
 }
 
@@ -179,8 +180,8 @@ void GameScene::resetGame()
 		delete e;
 	}
 
-	bullet.clear();
-	enemy.clear();
+	bullet = std::vector<Bullet*>();
+	enemy = std::vector<Enemy*>();
 
 	scoreLabel->setPosition(Point(visibleSize.width *0.25 + origin.x, visibleSize.height * 0.5 + origin.y));
 	
